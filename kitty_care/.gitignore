@@ -1,0 +1,64 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+
+# Generated files
+*.log
+*.lock
+*.zip
+*.tmp
+*.DS_Store
+
+# iOS
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Pods/
+ios/Podfile.lock
+ios/Runner.xcworkspace/
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+android/*.iml
+
+# Web
+web/.dart_tool/
+web/build/
+
+# macOS
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/Pods/
+macos/Podfile.lock
+macos/.symlinks/
+macos/build/
+
+# Windows
+windows/flutter/ephemeral/
+windows/build/
+
+# Linux
+linux/flutter/ephemeral/
+linux/build/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Misc
+coverage/
+!.vscode/settings.json
+
+# Other platforms
+linux/
+windows/
+macos/
+web/

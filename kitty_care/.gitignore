@@ -62,3 +62,19 @@ linux/
 windows/
 macos/
 web/
+
+# Flutter & build files
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Pods/
+macos/Pods/
+macos/.symlinks/
+
+# Firebase local files
+*.secret

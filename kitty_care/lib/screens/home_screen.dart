@@ -6,6 +6,11 @@ import '../widgets/emotions.dart';
 import '../widgets/sleep.dart';
 import '../widgets/bandage.dart';
 import '../widgets/window.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/name.dart'; // wherever you saved it
+
+
+final db = FirebaseFirestore.instance;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            NameWidget(),
             WindowDisplay(currentSeason: currentSeason),
             const SizedBox(height: 24),
             Wrap(

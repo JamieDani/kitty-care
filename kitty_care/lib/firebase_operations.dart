@@ -79,3 +79,68 @@ Future<void> logPeriodStart(String dateString) async {
     rethrow;
   }
 }
+
+
+Future<void> logEmotions(
+  int happiness,
+  int energy,
+  int satiation,
+  int calmness,
+  int kindness,
+  String dateString,
+) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+
+  try {
+    // Validate 0–10 range
+    for (final value in [happiness, energy, satiation, calmness, kindness]) {
+      if (value < 0 || value > 10) {
+        throw Exception('Emotion values must be between 0 and 10 inclusive.');
+      }
+    }
+
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+
+    // Check if a log for this date already exists
+    final existingLogs = await dailyLogsRef
+        .where('date', isEqualTo: dateString)
+        .limit(1)
+        .get();
+
+    if (existingLogs.docs.isEmpty) {
+      // No existing log → create new one
+      await dailyLogsRef.add({
+        'date': dateString,
+        'emotionalSymptoms': {
+          'happiness': happiness,
+          'energy': energy,
+          'satiation': satiation,
+          'calmness': calmness,
+          'kindness': kindness,
+        },
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('🧠 Created new daily log for $dateString');
+    } else {
+      // Log exists → update emotionalSymptoms
+      final docRef = existingLogs.docs.first.reference;
+      await docRef.set({
+        'emotionalSymptoms': {
+          'happiness': happiness,
+          'energy': energy,
+          'satiation': satiation,
+          'calmness': calmness,
+          'kindness': kindness,
+        },
+      }, SetOptions(merge: true));
+
+      print('🔄 Updated existing daily log for $dateString');
+    }
+  } catch (e) {
+    print('❌ Error logging emotions: $e');
+    rethrow;
+  }
+}
+

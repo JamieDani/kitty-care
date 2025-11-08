@@ -144,3 +144,45 @@ Future<void> logEmotions(
   }
 }
 
+Future<void> logSleep(double hours, String dateString) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+
+  try {
+    // Validate hours (e.g., 0–24 range, but flexible)
+    if (hours < 0 || hours > 24) {
+      throw Exception('Sleep hours must be between 0 and 24.');
+    }
+
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+
+    // Check if there's already a log for that date
+    final existingLogs = await dailyLogsRef
+        .where('date', isEqualTo: dateString)
+        .limit(1)
+        .get();
+
+    if (existingLogs.docs.isEmpty) {
+      // No existing log → create a new one
+      await dailyLogsRef.add({
+        'date': dateString,
+        'hoursSleep': hours,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('💤 Created new daily log for $dateString with $hours hours of sleep');
+    } else {
+      // Log exists → update or add hoursSleep field
+      final docRef = existingLogs.docs.first.reference;
+      await docRef.set({
+        'hoursSleep': hours,
+      }, SetOptions(merge: true));
+
+      print('🔄 Updated sleep hours for $dateString to $hours');
+    }
+  } catch (e) {
+    print('❌ Error logging sleep: $e');
+    rethrow;
+  }
+}
+

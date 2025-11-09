@@ -258,6 +258,72 @@ Future<void> logEmotions(
   }
 }
 
+Future<void> logPhysical(
+  int frontCramps,
+  int backCramps,
+  int headache,
+  int nausea,
+  int fatigue,
+  String dateString,
+) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+
+  try {
+    // Validate 0–10 range
+    for (final value in [frontCramps, backCramps, headache, nausea, fatigue]) {
+      if (value < 0 || value > 5) {
+        throw Exception('Emotion values must be between 0 and 5 inclusive.');
+      }
+    }
+
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+
+    // Check if a log for this date already exists
+    final existingLogs = await dailyLogsRef
+        .where('date', isEqualTo: dateString)
+        .limit(1)
+        .get();
+
+    if (existingLogs.docs.isEmpty) {
+      // No existing log → create new one
+      final String? phase = await getCurrentPhase(dateString);
+
+      await dailyLogsRef.add({
+        'date': dateString,
+        'phase': phase,
+        'physicalSymptoms': {
+          'frontCramps': frontCramps,
+          'backCramps': backCramps,
+          'headache': headache,
+          'nausea': nausea,
+          'fatigue': fatigue,
+        },
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('(physical) Created new daily log for $dateString');
+    } else {
+      // Log exists → update emotionalSymptoms
+      final docRef = existingLogs.docs.first.reference;
+      await docRef.set({
+        'physicalSymptoms': {
+          'frontCramps': frontCramps,
+          'backCramps': backCramps,
+          'headache': headache,
+          'nausea': nausea,
+          'fatigue': fatigue,
+        },
+      }, SetOptions(merge: true));
+
+      print('🔄 (physical) Updated existing daily log for $dateString');
+    }
+  } catch (e) {
+    print('❌ Error logging physical: $e');
+    rethrow;
+  }
+}
+
 Future<void> logSleep(double hours, String dateString) async {
   const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
   final DateFormat format = DateFormat('yyyy-MM-dd');

@@ -1,10 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 final FirebaseFirestore _db = FirebaseFirestore.instance;
 
 Future<int> daysToPeriod() async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime today = DateTime.now();
 
@@ -48,7 +60,17 @@ Future<int> daysToPeriod() async {
 
 
 Future<String?> getCurrentPhase(String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime queryDate = format.parse(dateString);
 
@@ -115,7 +137,17 @@ Future<String?> getCurrentPhase(String dateString) async {
 
 
 Future<void> logPeriodStart(String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime newPeriodStart = format.parse(dateString);
 
@@ -200,7 +232,17 @@ Future<void> logEmotions(
   int kindness,
   String dateString,
 ) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  } // TODO: replace with actual ID
   final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
@@ -266,8 +308,17 @@ Future<void> logPhysical(
   int fatigue,
   String dateString,
 ) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
+final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }  final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
     // Validate 0–10 range
@@ -325,8 +376,17 @@ Future<void> logPhysical(
 }
 
 Future<void> logSleep(double hours, String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
+final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }  final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
     // Validate hours (e.g., 0–24 range, but flexible)

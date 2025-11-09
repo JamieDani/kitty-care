@@ -14,10 +14,8 @@ import '../widgets/mailbox_display.dart';
 import '../widgets/bandage_display.dart';
 import '../widgets/symptoms_display.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../widgets/name.dart'; // wherever you saved it
 import '../firebase_operations.dart';
 import '../util.dart';
-import 'package:intl/intl.dart';
 
 
 final db = FirebaseFirestore.instance;
@@ -65,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            NameWidget(),
             WindowDisplay(currentSeason: currentSeason),
             const SizedBox(height: 24),
             Wrap(

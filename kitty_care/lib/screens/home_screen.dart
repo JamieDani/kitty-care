@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         title: const Text('Mailbox'),
                         content: SizedBox(
                           width: 350,
-                          height: 420,
+                          height: 480,
                           child: MailboxDisplay(key: mailboxKey),
                         ),
                         actions: [

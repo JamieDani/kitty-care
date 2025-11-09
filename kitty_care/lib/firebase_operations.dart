@@ -302,3 +302,113 @@ Future<void> logSleep(double hours, String dateString) async {
     rethrow;
   }
 }
+
+Future<void> logSymptoms(
+  int frontCramps,
+  int backCramps,
+  int headache,
+  int nausea,
+  int fatigue,
+  String dateString,
+) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+
+  try {
+    // Validate 1–5 range
+    for (final value in [frontCramps, backCramps, headache, nausea, fatigue]) {
+      if (value < 1 || value > 5) {
+        throw Exception('Symptom values must be between 1 and 5 inclusive.');
+      }
+    }
+
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+
+    // Check if a log for this date already exists
+    final existingLogs = await dailyLogsRef
+        .where('date', isEqualTo: dateString)
+        .limit(1)
+        .get();
+
+    if (existingLogs.docs.isEmpty) {
+      // No existing log → create new one
+      final String? phase = await getCurrentPhase(dateString);
+
+      await dailyLogsRef.add({
+        'date': dateString,
+        'phase': phase,
+        'physicalSymptoms': {
+          'frontCramps': frontCramps,
+          'backCramps': backCramps,
+          'headache': headache,
+          'nausea': nausea,
+          'fatigue': fatigue,
+        },
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('🩹 Created new daily log for $dateString');
+    } else {
+      // Log exists → update physicalSymptoms
+      final docRef = existingLogs.docs.first.reference;
+      await docRef.set({
+        'physicalSymptoms': {
+          'frontCramps': frontCramps,
+          'backCramps': backCramps,
+          'headache': headache,
+          'nausea': nausea,
+          'fatigue': fatigue,
+        },
+      }, SetOptions(merge: true));
+
+      print('🔄 Updated existing daily log for $dateString');
+    }
+  } catch (e) {
+    print('❌ Error logging symptoms: $e');
+    rethrow;
+  }
+}
+
+Future<void> logPadChange(String timestampString) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+
+  try {
+    // Parse the timestamp to extract the date
+    final DateTime timestamp = DateTime.parse(timestampString);
+    final String dateString = format.format(timestamp);
+
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+
+    // Check if a log for this date already exists
+    final existingLogs = await dailyLogsRef
+        .where('date', isEqualTo: dateString)
+        .limit(1)
+        .get();
+
+    if (existingLogs.docs.isEmpty) {
+      // No existing log → create new one with pad changes array
+      final String? phase = await getCurrentPhase(dateString);
+
+      await dailyLogsRef.add({
+        'date': dateString,
+        'phase': phase,
+        'padChanges': [timestampString],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('🩹 Created new daily log with pad change for $dateString');
+    } else {
+      // Log exists → append to padChanges array
+      final docRef = existingLogs.docs.first.reference;
+      await docRef.update({
+        'padChanges': FieldValue.arrayUnion([timestampString]),
+      });
+
+      print('🔄 Added pad change to daily log for $dateString at $timestampString');
+    }
+  } catch (e) {
+    print('❌ Error logging pad change: $e');
+    rethrow;
+  }
+}

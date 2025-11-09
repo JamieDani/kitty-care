@@ -9,7 +9,7 @@ class Calendar extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Transform.translate(
-        offset: const Offset(4, -300), // ← X = left, Y = up
+        offset: const Offset(45, -280), // ← X = left, Y = up
         child: Image.asset(
           'assets/images/strawberry_calendar.png',
           height: 100,

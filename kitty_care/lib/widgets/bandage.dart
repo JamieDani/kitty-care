@@ -6,9 +6,16 @@ class Bandage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Bandage'),
+    return GestureDetector(
+      onTap: onPressed,
+      child: Transform.translate(
+        offset: const Offset(105, 250), // ← moves it right and up
+        child: Image.asset(
+          'assets/images/Bandage.png',
+          height: 90,
+          width: 90,
+        ),
+      ),
     );
   }
 }

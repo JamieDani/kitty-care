@@ -6,9 +6,13 @@ class Sleep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Sleep'),
+    return GestureDetector(
+      onTap: onPressed,
+      child: Image.asset(
+        'assets/images/Bed.png',
+        height: 90,
+        width: 90,
+      ),
     );
   }
 }

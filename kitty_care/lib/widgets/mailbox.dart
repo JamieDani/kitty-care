@@ -6,9 +6,16 @@ class Mailbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Mailbox'),
+    return Transform.translate(
+      offset: const Offset(0, 360), // moves slightly left and down
+      child: GestureDetector(
+        onTap: onPressed, // ensures your dialog still opens
+        child: Image.asset(
+          'assets/images/Mail.png',
+          height: 90,
+          width: 90,
+        ),
+      ),
     );
   }
 }

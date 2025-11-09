@@ -109,162 +109,166 @@ class _HomeScreenState extends State<HomeScreen> {
               fit: BoxFit.cover,
             ),
           ),
-          // Content layer
-          SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    alignment: WrapAlignment.center,
-                    children: [
-                Calendar(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => Dialog(
-                        insetPadding: const EdgeInsets.all(20),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: 340,
-                            maxHeight: 500,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: const DateDisplay(),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                Mailbox(
-                  onPressed: () {
-                    final GlobalKey<MailboxDisplayState> mailboxKey = GlobalKey<MailboxDisplayState>();
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Mailbox'),
-                        content: SizedBox(
-                          width: 350,
-                          height: 480,
-                          child: MailboxDisplay(key: mailboxKey),
-                        ),
-                        actions: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TextButton.icon(
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Refresh'),
-                                onPressed: () {
-                                  mailboxKey.currentState?.refreshMail();
-                                },
+
+          // 👇 Move this SafeArea to the END so it's above everything
+          Positioned.fill(
+            child: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Calendar(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => Dialog(
+                                insetPadding: const EdgeInsets.all(20),
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 340,
+                                    maxHeight: 500,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: const DateDisplay(),
+                                  ),
+                                ),
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Close'),
+                            );
+                          },
+                        ),
+                        Mailbox(
+                          onPressed: () {
+                            final GlobalKey<MailboxDisplayState> mailboxKey =
+                                GlobalKey<MailboxDisplayState>();
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Mailbox'),
+                                content: SizedBox(
+                                  width: 350,
+                                  height: 480,
+                                  child: MailboxDisplay(key: mailboxKey),
+                                ),
+                                actions: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      TextButton.icon(
+                                        icon: const Icon(Icons.refresh),
+                                        label: const Text('Refresh'),
+                                        onPressed: () {
+                                          mailboxKey.currentState?.refreshMail();
+                                        },
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Close'),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                Emotions(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Emotions Tracker'),
-                        content: SizedBox(
-                          width: 350,
-                          height: 580,
-                          child: const EmotionsDisplay(),
+                            );
+                          },
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                Sleep(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Sleep Tracker'),
-                        content: SizedBox(
-                          width: 350,
-                          height: 400,
-                          child: SingleChildScrollView(
-                            child: const SleepDisplay(),
-                          ),
+                        Emotions(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Emotions Tracker'),
+                                content: SizedBox(
+                                  width: 350,
+                                  height: 580,
+                                  child: const EmotionsDisplay(),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                Bandage(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Bandage Tracker'),
-                        content: SizedBox(
-                          width: 350,
-                          height: 400,
-                          child: SingleChildScrollView(
-                            child: const BandageDisplay(),
-                          ),
+                        Sleep(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Sleep Tracker'),
+                                content: SizedBox(
+                                  width: 350,
+                                  height: 400,
+                                  child: SingleChildScrollView(
+                                    child: const SleepDisplay(),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                Symptoms(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Symptom Tracker'),
-                        content: SizedBox(
-                          width: 350,
-                          height: 520,
-                          child: const SymptomsDisplay(),
+                        Bandage(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Bandage Tracker'),
+                                content: SizedBox(
+                                  width: 350,
+                                  height: 400,
+                                  child: SingleChildScrollView(
+                                    child: const BandageDisplay(),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                        Symptoms(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Symptom Tracker'),
+                                content: SizedBox(
+                                  width: 350,
+                                  height: 520,
+                                  child: const SymptomsDisplay(),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                    ],
-                  ),
-                ],
               ),
             ),
           ),

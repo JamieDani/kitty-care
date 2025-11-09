@@ -60,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Wellness App Prototype')),
-      body: Center(
+      body: 
+      Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -27,49 +27,50 @@ class _ImageAnalyzerState extends State<ImageAnalyzer> {
   bool _isLoading = false;
 
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 85,
-    );
+  final XFile? image = await _picker.pickImage(
+    source: ImageSource.camera,
+    maxWidth: 1024,
+    maxHeight: 1024,
+    imageQuality: 85,
+  );
 
-    if (image == null) return;
+  if (image == null) return;
 
-    setState(() {
-      _isLoading = true;
-      _analysis = null;
-    });
+  if (!mounted) return;
+  setState(() {
+    _isLoading = true;
+    _analysis = null;
+  });
 
-    try {
-      final bytes = await image.readAsBytes();
-      
-      // Get current phase
-      final String today = getCurrentLocalDate();
-      final String? phase = await getCurrentPhase(today);
-      
-      // Analyze image
-      final String result;
-      if (widget.analysisType == 'pad') {
-        result = await widget.geminiService.analyzePadImage(bytes, phase ?? 'period');
-      } else {
-        result = await widget.geminiService.analyzeFoodImage(bytes, phase ?? 'period');
-      }
+  try {
+    final bytes = await image.readAsBytes();
 
-      setState(() {
-        _imageBytes = bytes;
-        _analysis = result;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
+    final String today = getCurrentLocalDate();
+    final String? phase = await getCurrentPhase(today);
+
+    final String result;
+    if (widget.analysisType == 'pad') {
+      result = await widget.geminiService.analyzePadImage(bytes, phase ?? 'period');
+    } else {
+      result = await widget.geminiService.analyzeFoodImage(bytes, phase ?? 'period');
     }
+
+    if (!mounted) return;
+    setState(() {
+      _imageBytes = bytes;
+      _analysis = result;
+      _isLoading = false;
+    });
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {

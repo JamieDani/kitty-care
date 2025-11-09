@@ -67,19 +67,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Mailbox(
                   onPressed: () {
+                    final GlobalKey<MailboxDisplayState> mailboxKey = GlobalKey<MailboxDisplayState>();
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('Mailbox'),
                         content: SizedBox(
                           width: 350,
-                          height: 450,
-                          child: const MailboxDisplay(),
+                          height: 380,
+                          child: MailboxDisplay(key: mailboxKey),
                         ),
                         actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Refresh'),
+                                onPressed: () {
+                                  mailboxKey.currentState?.refreshMail();
+                                },
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Close'),
+                              ),
+                            ],
                           ),
                         ],
                       ),

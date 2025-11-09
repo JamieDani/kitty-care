@@ -6,10 +6,10 @@ class MailboxDisplay extends StatefulWidget {
   const MailboxDisplay({super.key});
 
   @override
-  State<MailboxDisplay> createState() => _MailboxDisplayState();
+  State<MailboxDisplay> createState() => MailboxDisplayState();
 }
 
-class _MailboxDisplayState extends State<MailboxDisplay> {
+class MailboxDisplayState extends State<MailboxDisplay> {
   List<String> messages = [];
   DateTime? selectedDate;
 
@@ -138,6 +138,13 @@ class _MailboxDisplayState extends State<MailboxDisplay> {
     setState(() => messages = generated);
   }
 
+  Future<void> refreshMail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'mail_${DateFormat('yyyy-MM-dd').format(selectedDate!)}';
+    await prefs.remove(key);
+    _loadMailForDate(selectedDate!);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (selectedDate == null) {
@@ -146,79 +153,46 @@ class _MailboxDisplayState extends State<MailboxDisplay> {
 
     final formattedDate = DateFormat('MMM d, yyyy').format(selectedDate!);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '📬 Mail for $formattedDate',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.pinkAccent,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Display messages with proper spacing
-                ...messages.map((m) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Card(
-                        color: Colors.pink.shade50,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            m,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )),
-
-                const SizedBox(height: 20),
-
-                // Keep refresh button always visible within scroll area
-                Align(
-                  alignment: Alignment.center,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh Mail'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pinkAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      final key = 'mail_${DateFormat('yyyy-MM-dd').format(selectedDate!)}';
-                      await prefs.remove(key);
-                      _loadMailForDate(selectedDate!);
-                    },
-                  ),
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '📬 Mail for $formattedDate',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.pinkAccent,
             ),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+
+          // Display messages with proper spacing
+          ...messages.map((m) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Card(
+                  color: Colors.pink.shade50,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Text(
+                      m,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              )),
+        ],
+      ),
     );
   }
 }

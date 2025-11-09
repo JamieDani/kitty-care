@@ -368,3 +368,68 @@ Future<void> logSleep(double hours, String dateString) async {
     rethrow;
   }
 }
+
+Future<List<Map<String, dynamic>>> fetchWeeklyRawLogs(String childId) async {
+  final DateTime now = DateTime.now();
+  final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+  final QuerySnapshot logsSnapshot = await _db
+      .collection('children')
+      .doc(childId)
+      .collection('dailyLogs')
+      .where(
+        'date',
+        isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(sevenDaysAgo),
+      )
+      .orderBy('date', descending: false)
+      .get();
+
+  if (logsSnapshot.docs.isEmpty) {
+    return [];
+  }
+
+  const physicalFields = [
+    'backCramps',
+    'fatigue',
+    'frontCramps',
+    'headache',
+    'nausea',
+  ];
+
+  const emotionalFields = [
+    'calmness',
+    'energy',
+    'happiness',
+    'kindness',
+    'satiation',
+  ];
+
+  final List<Map<String, dynamic>> rawLogs = logsSnapshot.docs.map((doc) {
+    final data = Map<String, dynamic>.from(doc.data() as Map); // ✅ safe conversion
+    data['id'] = doc.id;
+
+    // --- Ensure Physical Symptoms ---
+    final rawPhysical = Map<String, dynamic>.from(data['physicalSymptoms'] ?? {});
+    final physical = {
+      for (var key in physicalFields) key: (rawPhysical[key] ?? 0).toDouble(),
+    };
+    data['physicalSymptoms'] = physical;
+
+    // --- Ensure Emotional Symptoms ---
+    final rawEmotional = Map<String, dynamic>.from(data['emotionalSymptoms'] ?? {});
+    final emotional = {
+      for (var key in emotionalFields) key: (rawEmotional[key] ?? 0).toDouble(),
+    };
+    data['emotionalSymptoms'] = emotional;
+
+    // --- Other Fields ---
+    data['hoursSlept'] = (data['hoursSlept'] ?? 0).toDouble();
+    data['padChanges'] = List<String>.from(data['padChanges'] ?? []);
+    data['phase'] = data['phase'] ?? 'unknown';
+    data['date'] = data['date'] ?? '';
+
+    return data;
+  }).toList();
+
+  return rawLogs;
+}

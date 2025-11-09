@@ -6,9 +6,14 @@ class Symptoms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Symptoms'),
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.translucent,
+      child: Image.asset(
+        'assets/images/Symptom.png',
+        height: 90,
+        width: 90,
+      ),
     );
   }
 }

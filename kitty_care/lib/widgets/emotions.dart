@@ -6,9 +6,14 @@ class Emotions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Emotions'),
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.translucent,
+      child: Image.asset(
+        'assets/images/Emotion.png',
+        height: 90,
+        width: 90,
+      ),
     );
   }
 }

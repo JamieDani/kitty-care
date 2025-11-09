@@ -6,9 +6,14 @@ class Mailbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Mailbox'),
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.translucent,
+      child: Image.asset(
+        'assets/images/Mail.png',
+        height: 90,
+        width: 90,
+      ),
     );
   }
 }

@@ -6,9 +6,14 @@ class Calendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: const Text('Calendar'),
+    return GestureDetector(
+      onTap: onPressed,
+      behavior: HitTestBehavior.translucent, // ensures taps register
+      child: Image.asset(
+        'assets/images/strawberry_calendar.png',
+        height: 100,
+        width: 100,
+      ),
     );
   }
 }

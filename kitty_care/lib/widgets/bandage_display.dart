@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
+import '../firebase_operations.dart';
 
 class BandageDisplay extends StatefulWidget {
   const BandageDisplay({super.key});
@@ -53,6 +54,20 @@ class _BandageDisplayState extends State<BandageDisplay> {
       lastPadChange = now;
       timeSinceChange = "Just now 🩷";
     });
+
+    // Log to Firebase
+    await _logPadChangeToFirebase(now);
+  }
+
+  Future<void> _logPadChangeToFirebase(DateTime timestamp) async {
+    try {
+      // Call Firebase function with the timestamp
+      await logPadChange(timestamp.toIso8601String());
+
+      print('✅ Pad change logged to Firebase: ${timestamp.toIso8601String()}');
+    } catch (e) {
+      print('❌ Error logging pad change to Firebase: $e');
+    }
   }
 
   void _updateElapsed() {

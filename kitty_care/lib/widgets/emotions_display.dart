@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import '../firebase_operations.dart';
 
 class EmotionsDisplay extends StatefulWidget {
   const EmotionsDisplay({super.key});
@@ -44,6 +46,42 @@ class _EmotionsDisplayState extends State<EmotionsDisplay> {
     await prefs.setDouble('worriedCalm', worriedCalm);
     await prefs.setDouble('angryKind', angryKind);
     await prefs.setDouble('positivityScore', positivityScore);
+
+    // Log to Firebase
+    await _logEmotionsToFirebase();
+  }
+
+  Future<void> _logEmotionsToFirebase() async {
+    try {
+      // Convert 0-100 scale to 0-10 scale for Firebase
+      final int happiness = (sadHappy / 10).round();
+      final int energy = (tiredEnergetic / 10).round();
+      final int satiation = (hungryFull / 10).round();
+      final int calmness = (worriedCalm / 10).round();
+      final int kindness = (angryKind / 10).round();
+
+      // Get the selected date from SharedPreferences (same as calendar)
+      final prefs = await SharedPreferences.getInstance();
+      final savedDateStr = prefs.getString('saved_date');
+      final DateTime selectedDate = savedDateStr != null
+          ? DateTime.parse(savedDateStr)
+          : DateTime.now();
+      final String dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Call Firebase function
+      await logEmotions(
+        happiness,
+        energy,
+        satiation,
+        calmness,
+        kindness,
+        dateString,
+      );
+
+      print('✅ Emotions logged to Firebase for $dateString');
+    } catch (e) {
+      print('❌ Error logging emotions to Firebase: $e');
+    }
   }
 
   void _updatePositivity() {

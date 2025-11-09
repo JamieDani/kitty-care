@@ -2,6 +2,51 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+Future<int> daysToPeriod() async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+  final DateTime today = DateTime.now();
+
+  try {
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference cyclesRef = childRef.collection('cycles');
+
+    // Fetch the most recent cycle
+    final QuerySnapshot recentCycles = await cyclesRef
+        .orderBy('periodStartDate', descending: true)
+        .limit(1)
+        .get();
+
+    if (recentCycles.docs.isEmpty) {
+      throw Exception('No cycles found for this child.');
+    }
+
+    final recentCycle = recentCycles.docs.first;
+    final data = recentCycle.data() as Map<String, dynamic>;
+
+    // Get the predicted end of luteal phase
+    final String lutealEndStr = data['predictedLuteal'][1];
+    final DateTime lutealEnd = format.parse(lutealEndStr);
+
+    // The next period should start the day after the luteal end
+    final DateTime nextPeriodStart = lutealEnd.add(const Duration(days: 1));
+
+    // Calculate the difference in days
+    int daysRemaining = nextPeriodStart.difference(today).inDays;
+
+    // Clamp negative values to 0
+    if (daysRemaining < 0) daysRemaining = 0;
+
+    print('📅 Days until next period: $daysRemaining');
+    return daysRemaining;
+  } catch (e) {
+    print('❌ Error calculating days to period: $e');
+    rethrow;
+  }
+}
+
+
 Future<String?> getCurrentPhase(String dateString) async {
   const String childId = 'TkzT27YKNhsb8k7ZOKFD';
   final DateFormat format = DateFormat('yyyy-MM-dd');

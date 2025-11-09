@@ -429,7 +429,9 @@ final user = FirebaseAuth.instance.currentUser;
   }
 }
 
-Future<List<Map<String, dynamic>>> fetchWeeklyRawLogs(String childId) async {
+/// Fetches the past 7 days of daily logs for a child and computes category-based averages.
+/// Handles missing categories but assumes all subfields exist if category exists.
+Future<Map<String, dynamic>> fetchWeeklyLogs(String childId) async {
   final DateTime now = DateTime.now();
   final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
 
@@ -437,6 +439,102 @@ Future<List<Map<String, dynamic>>> fetchWeeklyRawLogs(String childId) async {
       .collection('children')
       .doc(childId)
       .collection('dailyLogs')
+      .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(sevenDaysAgo))
+      .get();
+
+  if (logsSnapshot.docs.isEmpty) {
+    return {};
+  }
+
+  // Initialize sums and counters
+  final Map<String, double> physicalSums = {
+    'frontCramps': 0,
+    'backCramps': 0,
+    'headache': 0,
+    'nausea': 0,
+    'fatigue': 0,
+  };
+  int physicalCount = 0;
+
+  final Map<String, double> emotionalSums = {
+    'happiness': 0,
+    'energy': 0,
+    'satiation': 0,
+    'calmness': 0,
+    'kindness': 0,
+  };
+  int emotionalCount = 0;
+
+  double totalHoursSlept = 0;
+  int sleepCount = 0;
+
+  final Map<String, int> phaseCounts = {};
+
+  // Aggregate
+  for (var doc in logsSnapshot.docs) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    // --- Physical Symptoms ---
+    if (data['physicalSymptoms'] != null) {
+      final physical = Map<String, dynamic>.from(data['physicalSymptoms']);
+      for (var key in physicalSums.keys) {
+        physicalSums[key] = physicalSums[key]! + (physical[key] ?? 0).toDouble();
+      }
+      physicalCount++;
+    }
+
+    // --- Emotional Symptoms ---
+    if (data['emotionalSymptoms'] != null) {
+      final emotional = Map<String, dynamic>.from(data['emotionalSymptoms']);
+      for (var key in emotionalSums.keys) {
+        emotionalSums[key] = emotionalSums[key]! + (emotional[key] ?? 0).toDouble();
+      }
+      emotionalCount++;
+    }
+
+    // --- Sleep ---
+    if (data['hoursSleep'] != null) {
+      totalHoursSlept += (data['hoursSleep']).toDouble();
+      sleepCount++;
+    }
+
+    // --- Phase ---
+    if (data['phase'] != null) {
+      final phase = data['phase'] as String;
+      phaseCounts[phase] = (phaseCounts[phase] ?? 0) + 1;
+    }
+  }
+
+  // --- Compute Averages ---
+  final Map<String, double> physicalAvg = {
+    for (var key in physicalSums.keys)
+      key: physicalCount > 0 ? physicalSums[key]! / physicalCount : 0
+  };
+
+  final Map<String, double> emotionalAvg = {
+    for (var key in emotionalSums.keys)
+      key: emotionalCount > 0 ? emotionalSums[key]! / emotionalCount : 0
+  };
+
+  final avgSleep = sleepCount > 0 ? totalHoursSlept / sleepCount : 0.0;
+
+  final String dominantPhase = phaseCounts.isEmpty
+      ? 'unknown'
+      : (phaseCounts.entries.reduce((a, b) => a.value > b.value ? a : b)).key;
+
+  var logs = {
+    'physicalAvg': physicalAvg,
+    'emotionalAvg': emotionalAvg,
+    'avgSleep': avgSleep,
+    'dominantPhase': dominantPhase,
+    'logCount': logsSnapshot.docs.length,
+    'physicalCount': physicalCount,
+    'emotionalCount': emotionalCount,
+    'sleepCount': sleepCount,
+  };
+  print(logs);
+  return logs;
+}
       .where(
         'date',
         isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(sevenDaysAgo),

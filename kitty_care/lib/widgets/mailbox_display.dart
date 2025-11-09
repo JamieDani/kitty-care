@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import '../firebase_operations.dart';
+import '../gemini_service.dart'; // make sure this exists with your sendMail function
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MailboxDisplay extends StatefulWidget {
   const MailboxDisplay({super.key});
@@ -13,6 +14,8 @@ class MailboxDisplay extends StatefulWidget {
 class MailboxDisplayState extends State<MailboxDisplay> {
   List<String> messages = [];
   DateTime? selectedDate;
+
+  final gemini = GeminiService(apiKey: "fake");
 
   final List<String> _motivationalQuotes = [
     "🌞 Remember: small steps count too.",
@@ -32,10 +35,14 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     "🧸 Tell someone you appreciate them today.",
   ];
 
+  //late final GeminiService gemini;
+
   @override
   void initState() {
     super.initState();
     _loadSelectedDate();
+    //final geminiApiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    //gemini = GeminiService(apiKey: geminiApiKey);
   }
 
   Future<void> _loadSelectedDate() async {
@@ -66,7 +73,6 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     }
   }
 
-  /// Creates the sleep summary (for the final message)
   Future<String> _generateSleepMessage() async {
     final prefs = await SharedPreferences.getInstance();
     final bedtime = prefs.getString('bedtime');
@@ -93,7 +99,6 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     }
   }
 
-  /// Creates a positivity reminder (replaces one random message)
   Future<String> _generatePositivityMessage() async {
     final prefs = await SharedPreferences.getInstance();
     double? positivity = prefs.getDouble('positivityScore');
@@ -247,8 +252,7 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     return waketime.difference(bedtime);
   }
 
-  Future<void> _generateDailyMail(
-      DateTime date, SharedPreferences prefs, String key) async {
+  Future<void> _generateDailyMail(DateTime date, SharedPreferences prefs, String key) async {
     final weekday = DateFormat('EEEE').format(date);
     final randomReminder = (_reminders..shuffle()).first;
     final positivityMessage = await _generatePositivityMessage();
@@ -279,33 +283,109 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     _loadMailForDate(selectedDate!);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (selectedDate == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  /// ---------- NEW: Send Mail Flow ----------
 
-    final formattedDate = DateFormat('MMM d, yyyy').format(selectedDate!);
+  void _openSendMailDialog() {
+    final TextEditingController mailController = TextEditingController();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '📬 Mail for $formattedDate',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.pinkAccent,
-            ),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Send Mail"),
+        content: TextField(
+          controller: mailController,
+          maxLines: 5,
+          decoration: const InputDecoration(
+            hintText: "Write your message here...",
           ),
-          const SizedBox(height: 12),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final message = mailController.text.trim();
+              if (message.isEmpty) return;
+              Navigator.pop(context);
+              _sendUserMail(message);
+            },
+            child: const Text("Send"),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // Display messages with proper spacing
-          ...messages.map((m) => Padding(
+  Future<void> _sendUserMail(String message) async {
+    // Add placeholder message
+    setState(() {
+      messages.add("📨 Sending your mail...");
+    });
+
+    try {
+      var response = await gemini.sendMail(message);
+      final reply = response["response"];
+      final personaName = response["persona"];
+
+      setState(() {
+        messages.removeWhere((m) => m == "📨 Sending your mail...");
+        messages.add("✉️ From $personaName: $reply");
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'mail_${DateFormat('yyyy-MM-dd').format(selectedDate!)}';
+      await prefs.setStringList(key, messages);
+
+    } catch (e) {
+      setState(() {
+        messages.removeWhere((m) => m == "📨 Sending your mail...");
+        messages.add("⚠️ Error sending mail: $e");
+      });
+    }
+  }
+
+  /// ---------- BUILD METHOD ----------
+  @override
+  @override
+Widget build(BuildContext context) {
+  if (selectedDate == null) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  final formattedDate = DateFormat('MMM d, yyyy').format(selectedDate!);
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          '📬 Mail for $formattedDate',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.pinkAccent,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Send Mail Button
+        ElevatedButton(
+          onPressed: _openSendMailDialog,
+          child: const Text("✉️ Send Mail"),
+        ),
+        const SizedBox(height: 12),
+
+        // Expanded scrollable messages list
+        Expanded(
+          child: ListView.builder(
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final m = messages[index];
+              return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Card(
                   color: Colors.pink.shade50,
@@ -324,9 +404,12 @@ class MailboxDisplayState extends State<MailboxDisplay> {
                     ),
                   ),
                 ),
-              )),
-        ],
-      ),
-    );
-  }
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }

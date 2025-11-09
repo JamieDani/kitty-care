@@ -16,7 +16,7 @@ import '../widgets/symptoms_display.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_operations.dart';
 import '../util.dart';
-
+import '../widgets/sign_out.dart';
 
 final db = FirebaseFirestore.instance;
 
@@ -76,6 +76,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: SignOutButton(),
+        ),
+  ],
       ),
       body: Stack(
         children: [

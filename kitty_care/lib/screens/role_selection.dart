@@ -11,12 +11,20 @@ class RoleSelectionScreen extends StatelessWidget {
 
     // Create either a parent or child document
     final roleCollection = role == 'parent' ? 'parents' : 'children';
-    final roleDoc = await db.collection(roleCollection).add({
+
+    final roleData = {
       'linkedUserId': user.uid,
       'email': user.email,
       'name': user.displayName,
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+
+    // Add periodLength if child
+    if (role == 'child') {
+      roleData['periodLength'] = 5;
+    }
+
+    final roleDoc = await db.collection(roleCollection).add(roleData);
 
     // Create user document linking back
     await db.collection('users').doc(user.uid).set({

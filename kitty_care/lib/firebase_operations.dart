@@ -1,10 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 final FirebaseFirestore _db = FirebaseFirestore.instance;
 
 Future<int> daysToPeriod() async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime today = DateTime.now();
 
@@ -48,7 +60,17 @@ Future<int> daysToPeriod() async {
 
 
 Future<String?> getCurrentPhase(String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime queryDate = format.parse(dateString);
 
@@ -115,7 +137,17 @@ Future<String?> getCurrentPhase(String dateString) async {
 
 
 Future<void> logPeriodStart(String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime newPeriodStart = format.parse(dateString);
 
@@ -200,7 +232,17 @@ Future<void> logEmotions(
   int kindness,
   String dateString,
 ) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  } // TODO: replace with actual ID
   final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
@@ -266,8 +308,17 @@ Future<void> logPhysical(
   int fatigue,
   String dateString,
 ) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
+final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }  final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
     // Validate 0–10 range
@@ -325,8 +376,17 @@ Future<void> logPhysical(
 }
 
 Future<void> logSleep(double hours, String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
+final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('No user logged in');
+  }
+
+  final userDoc = await getUserDocument(user.uid);
+  final childId = userDoc?['childId'] as String?;
+
+  if (childId == null) {
+    throw Exception('Child ID not found in user document');
+  }  final DateFormat format = DateFormat('yyyy-MM-dd');
 
   try {
     // Validate hours (e.g., 0–24 range, but flexible)
@@ -369,112 +429,99 @@ Future<void> logSleep(double hours, String dateString) async {
   }
 }
 
-Future<void> logSymptoms(
-  int frontCramps,
-  int backCramps,
-  int headache,
-  int nausea,
-  int fatigue,
-  String dateString,
-) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
+Future<List<Map<String, dynamic>>> fetchWeeklyRawLogs(String childId) async {
+  final DateTime now = DateTime.now();
+  final DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));
 
-  try {
-    // Validate 1–5 range
-    for (final value in [frontCramps, backCramps, headache, nausea, fatigue]) {
-      if (value < 1 || value > 5) {
-        throw Exception('Symptom values must be between 1 and 5 inclusive.');
-      }
-    }
+  final QuerySnapshot logsSnapshot = await _db
+      .collection('children')
+      .doc(childId)
+      .collection('dailyLogs')
+      .where(
+        'date',
+        isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(sevenDaysAgo),
+      )
+      .orderBy('date', descending: false)
+      .get();
 
-    final DocumentReference childRef = _db.collection('children').doc(childId);
-    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
-
-    // Check if a log for this date already exists
-    final existingLogs = await dailyLogsRef
-        .where('date', isEqualTo: dateString)
-        .limit(1)
-        .get();
-
-    if (existingLogs.docs.isEmpty) {
-      // No existing log → create new one
-      final String? phase = await getCurrentPhase(dateString);
-
-      await dailyLogsRef.add({
-        'date': dateString,
-        'phase': phase,
-        'physicalSymptoms': {
-          'frontCramps': frontCramps,
-          'backCramps': backCramps,
-          'headache': headache,
-          'nausea': nausea,
-          'fatigue': fatigue,
-        },
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      print('🩹 Created new daily log for $dateString');
-    } else {
-      // Log exists → update physicalSymptoms
-      final docRef = existingLogs.docs.first.reference;
-      await docRef.set({
-        'physicalSymptoms': {
-          'frontCramps': frontCramps,
-          'backCramps': backCramps,
-          'headache': headache,
-          'nausea': nausea,
-          'fatigue': fatigue,
-        },
-      }, SetOptions(merge: true));
-
-      print('🔄 Updated existing daily log for $dateString');
-    }
-  } catch (e) {
-    print('❌ Error logging symptoms: $e');
-    rethrow;
+  if (logsSnapshot.docs.isEmpty) {
+    return [];
   }
+
+  const physicalFields = [
+    'backCramps',
+    'fatigue',
+    'frontCramps',
+    'headache',
+    'nausea',
+  ];
+
+  const emotionalFields = [
+    'calmness',
+    'energy',
+    'happiness',
+    'kindness',
+    'satiation',
+  ];
+
+  final List<Map<String, dynamic>> rawLogs = logsSnapshot.docs.map((doc) {
+    final data = Map<String, dynamic>.from(doc.data() as Map); // ✅ safe conversion
+    data['id'] = doc.id;
+
+    // --- Ensure Physical Symptoms ---
+    final rawPhysical = Map<String, dynamic>.from(data['physicalSymptoms'] ?? {});
+    final physical = {
+      for (var key in physicalFields) key: (rawPhysical[key] ?? 0).toDouble(),
+    };
+    data['physicalSymptoms'] = physical;
+
+    // --- Ensure Emotional Symptoms ---
+    final rawEmotional = Map<String, dynamic>.from(data['emotionalSymptoms'] ?? {});
+    final emotional = {
+      for (var key in emotionalFields) key: (rawEmotional[key] ?? 0).toDouble(),
+    };
+    data['emotionalSymptoms'] = emotional;
+
+    // --- Other Fields ---
+    data['hoursSlept'] = (data['hoursSlept'] ?? 0).toDouble();
+    data['padChanges'] = List<String>.from(data['padChanges'] ?? []);
+    data['phase'] = data['phase'] ?? 'unknown';
+    data['date'] = data['date'] ?? '';
+
+    return data;
+  }).toList();
+
+  return rawLogs;
 }
 
-Future<void> logPadChange(String timestampString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; // TODO: replace with actual ID
-  final DateFormat format = DateFormat('yyyy-MM-dd');
 
-  try {
-    // Parse the timestamp to extract the date
-    final DateTime timestamp = DateTime.parse(timestampString);
-    final String dateString = format.format(timestamp);
+Future<Map<String, dynamic>?> getUserDocument(String userId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .get();
+  return doc.data();
+}
 
-    final DocumentReference childRef = _db.collection('children').doc(childId);
-    final CollectionReference dailyLogsRef = childRef.collection('dailyLogs');
+Future<Map<String, dynamic>?> getParentDocument(String parentId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('parents')
+      .doc(parentId)
+      .get();
+  return doc.data();
+}
 
-    // Check if a log for this date already exists
-    final existingLogs = await dailyLogsRef
-        .where('date', isEqualTo: dateString)
-        .limit(1)
-        .get();
+Future<bool> verifyChildExists(String childId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('children')
+      .doc(childId)
+      .get();
+  return doc.exists;
+}
 
-    if (existingLogs.docs.isEmpty) {
-      // No existing log → create new one with pad changes array
-      final String? phase = await getCurrentPhase(dateString);
-
-      await dailyLogsRef.add({
-        'date': dateString,
-        'phase': phase,
-        'padChanges': [timestampString],
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      print('🩹 Created new daily log with pad change for $dateString');
-    } else {
-      // Log exists → append to padChanges array
-      final docRef = existingLogs.docs.first.reference;
-      await docRef.update({
-        'padChanges': FieldValue.arrayUnion([timestampString]),
-      });
-
-      print('🔄 Added pad change to daily log for $dateString at $timestampString');
-    }
-  } catch (e) {
-    print('❌ Error logging pad change: $e');
-    rethrow;
-  }
+Future<void> updateParentChildId(String parentId, String childId) async {
+  await FirebaseFirestore.instance
+      .collection('parents')
+      .doc(parentId)
+      .update({'childId': childId});
 }

@@ -433,3 +433,35 @@ Future<List<Map<String, dynamic>>> fetchWeeklyRawLogs(String childId) async {
 
   return rawLogs;
 }
+
+
+Future<Map<String, dynamic>?> getUserDocument(String userId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .get();
+  return doc.data();
+}
+
+Future<Map<String, dynamic>?> getParentDocument(String parentId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('parents')
+      .doc(parentId)
+      .get();
+  return doc.data();
+}
+
+Future<bool> verifyChildExists(String childId) async {
+  final doc = await FirebaseFirestore.instance
+      .collection('children')
+      .doc(childId)
+      .get();
+  return doc.exists;
+}
+
+Future<void> updateParentChildId(String parentId, String childId) async {
+  await FirebaseFirestore.instance
+      .collection('parents')
+      .doc(parentId)
+      .update({'childId': childId});
+}

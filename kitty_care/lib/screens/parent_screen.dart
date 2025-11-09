@@ -1,9 +1,120 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../firebase_operations.dart';
 
-class ParentHomeScreen extends StatelessWidget {
+class ParentHomeScreen extends StatefulWidget {
   const ParentHomeScreen({super.key});
+
+  @override
+  State<ParentHomeScreen> createState() => _ParentHomeScreenState();
+}
+
+class _ParentHomeScreenState extends State<ParentHomeScreen> {
+  String? _childId;
+  bool _isLoading = true;
+  final _childCodeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChildId();
+  }
+
+  @override
+  void dispose() {
+    _childCodeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadChildId() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Get the user document to find their parentId
+      final userDoc = await getUserDocument(user.uid);
+      final parentId = userDoc?['parentId'] as String?;
+
+      if (parentId != null) {
+        // Get the parent document to find their childId
+        final parentDoc = await getParentDocument(parentId);
+        final childId = parentDoc?['childId'] as String?;
+
+        setState(() {
+          _childId = childId;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading data: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _submitChildCode() async {
+    final childCode = _childCodeController.text.trim();
+    
+    if (childCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a child code')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('No user logged in');
+
+      // Get the user's parentId
+      final userDoc = await getUserDocument(user.uid);
+      final parentId = userDoc?['parentId'] as String?;
+
+      if (parentId == null) {
+        throw Exception('Parent ID not found in user document');
+      }
+
+      // Verify the child exists
+      final childExists = await verifyChildExists(childCode);
+      if (!childExists) {
+        throw Exception('Invalid child code');
+      }
+
+      // Update the parent document with the childId
+      await updateParentChildId(parentId, childCode);
+
+      setState(() {
+        _childId = childCode;
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Child linked successfully!')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,37 +123,149 @@ class ParentHomeScreen extends StatelessWidget {
         title: const Text('Parent Home'),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          if (_childId != null)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                setState(() {
+                  _childId = null;
+                  _childCodeController.clear();
+                });
+              },
+              tooltip: 'Change child',
+            ),
+        ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchWeeklyRawLogs("TkzT27YKNhsb8k7ZOKFD"),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text(
-                'No logs found for the past 7 days.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _childId == null
+              ? _buildChildCodeInput()
+              : _buildChildLogs(),
+    );
+  }
+
+  Widget _buildChildCodeInput() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.family_restroom,
+              size: 80,
+              color: Colors.purple.shade300,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Connect to Your Child',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-            );
-          }
-
-          final logs = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: logs.length,
-            itemBuilder: (context, index) {
-              final log = logs[index];
-              return DailyLogCard(log: log);
-            },
-          );
-        },
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Enter your child\'s code to view their health logs',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              controller: _childCodeController,
+              decoration: InputDecoration(
+                labelText: 'Child Code',
+                hintText: 'Enter child code',
+                prefixIcon: const Icon(Icons.vpn_key),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitChildCode,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Connect',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildChildLogs() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: fetchWeeklyRawLogs(_childId!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.calendar_today, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                const Text(
+                  'No logs found for the past 7 days.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final logs = snapshot.data!;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: logs.length,
+          itemBuilder: (context, index) {
+            final log = logs[index];
+            return DailyLogCard(log: log);
+          },
+        );
+      },
     );
   }
 }

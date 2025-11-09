@@ -148,8 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Mailbox Button (bottom-left)
                 Positioned(
-                  left: 70,
-                  bottom: 200,
+                  left: 110,
+                  bottom: 0,
                   child: Mailbox(
                     onPressed: () {
                       final GlobalKey<MailboxDisplayState> mailboxKey =
@@ -189,8 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Emotions Button (bottom-right)
                 Positioned(
-                  right: 60,
-                  bottom: 180,
+                  right: 300,
+                  bottom: 0,
                   child: Emotions(
                     onPressed: () {
                       showDialog(
@@ -216,8 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Sleep Button (bottom-center)
                 Positioned(
-                  bottom: 100,
-                  left: MediaQuery.of(context).size.width / 2 - 45,
+                  bottom: 250,
+                  left: 320,
                   child: Sleep(
                     onPressed: () {
                       showDialog(
@@ -245,8 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Bandage Button (upper-left)
                 Positioned(
-                  left: 60,
-                  top: 160,
+                  left: 210,
+                  top: 635,
                   child: Bandage(
                     onPressed: () {
                       showDialog(
@@ -274,8 +274,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Symptoms Button (slightly below center)
                 Positioned(
-                  bottom: 260,
-                  left: MediaQuery.of(context).size.width / 2 - 45,
+                  bottom: 0,
+                  left: 300,
                   child: Symptoms(
                     onPressed: () {
                       showDialog(

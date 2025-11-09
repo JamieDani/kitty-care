@@ -8,6 +8,7 @@ class Sleep extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onPressed,
+      behavior: HitTestBehavior.translucent,
       child: Image.asset(
         'assets/images/Bed.png',
         height: 90,

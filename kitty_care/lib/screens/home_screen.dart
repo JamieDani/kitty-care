@@ -14,10 +14,8 @@ import '../widgets/mailbox_display.dart';
 import '../widgets/bandage_display.dart';
 import '../widgets/symptoms_display.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../widgets/name.dart'; // wherever you saved it
 import '../firebase_operations.dart';
 import '../util.dart';
-import 'package:intl/intl.dart';
 
 
 final db = FirebaseFirestore.instance;
@@ -48,30 +46,78 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initSeason() async {
     final String today = getCurrentLocalDate();
     final String? phase = await getCurrentPhase(today);
-    print("Your current phase: $phase");
+    print("📅 Today's date: $today");
+    print("🔍 Your current phase: $phase");
     if (phase != null && phaseToSeason.containsKey(phase)) {
       setState(() {
         currentSeason = phaseToSeason[phase]!;
+        print("🌸 Season set to: $currentSeason");
       });
+    } else {
+      print("⚠️ Phase not found or invalid, defaulting to winter");
     }
+  }
+
+  String get seasonalImagePath {
+    final path = switch (currentSeason) {
+      Season.winter => 'assets/images/New_Winter.png',
+      Season.spring => 'assets/images/New_Spring.png',
+      Season.summer => 'assets/images/New_Summer.png',
+      Season.fall => 'assets/images/New_Fall.png',
+    };
+    print("🖼️ Loading seasonal image: $path for season: $currentSeason");
+    return path;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Wellness App Prototype')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            NameWidget(),
-            WindowDisplay(currentSeason: currentSeason),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          // Background layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/MediumBackdrop.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Seasonal layer (changes based on cycle phase)
+          Positioned.fill(
+            child: Image.asset(
+              seasonalImagePath,
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Window overlay layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/NewWindow.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Cat overlay layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Berrie_Cat_Eyes_Openhappy.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Content layer
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
                 Calendar(
                   onPressed: () {
                     showDialog(
@@ -101,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         title: const Text('Mailbox'),
                         content: SizedBox(
                           width: 350,
-                          height: 420,
+                          height: 480,
                           child: MailboxDisplay(key: mailboxKey),
                         ),
                         actions: [
@@ -214,10 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

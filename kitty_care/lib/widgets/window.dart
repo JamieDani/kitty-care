@@ -20,19 +20,11 @@ class WindowDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.asset(
+      'assets/images/Window.png',
       width: 200,
       height: 150,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.lightBlue[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade400),
-      ),
-      child: Text(
-        seasonText,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
+      fit: BoxFit.contain,
     );
   }
 }

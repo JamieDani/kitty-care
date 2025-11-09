@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import '../firebase_operations.dart';
 
 class SymptomsDisplay extends StatefulWidget {
   const SymptomsDisplay({super.key});
@@ -40,6 +42,42 @@ class _SymptomsDisplayState extends State<SymptomsDisplay> {
     await prefs.setDouble('headache', headache);
     await prefs.setDouble('nausea', nausea);
     await prefs.setDouble('fatigue', fatigue);
+
+    // Log to Firebase
+    await _logSymptomsToFirebase();
+  }
+
+  Future<void> _logSymptomsToFirebase() async {
+    try {
+      // Convert double values to int (1-5 scale)
+      final int frontCrampsInt = frontCramps.round();
+      final int backCrampsInt = backCramps.round();
+      final int headacheInt = headache.round();
+      final int nauseaInt = nausea.round();
+      final int fatigueInt = fatigue.round();
+
+      // Get the selected date from SharedPreferences (same as calendar)
+      final prefs = await SharedPreferences.getInstance();
+      final savedDateStr = prefs.getString('saved_date');
+      final DateTime selectedDate = savedDateStr != null
+          ? DateTime.parse(savedDateStr)
+          : DateTime.now();
+      final String dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Call Firebase function
+      await logSymptoms(
+        frontCrampsInt,
+        backCrampsInt,
+        headacheInt,
+        nauseaInt,
+        fatigueInt,
+        dateString,
+      );
+
+      print('✅ Symptoms logged to Firebase for $dateString');
+    } catch (e) {
+      print('❌ Error logging symptoms to Firebase: $e');
+    }
   }
 
   Widget _buildSymptomScale(String symptomName, double value, ValueChanged<double> onChanged) {

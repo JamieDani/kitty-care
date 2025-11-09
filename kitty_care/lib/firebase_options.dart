@@ -58,6 +58,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '520857247433',
     projectId: 'kitty-care-b5d47',
     storageBucket: 'kitty-care-b5d47.firebasestorage.app',
+    iosClientId: '520857247433-niffj4ovggt76kmptr08bt2027tsppbb.apps.googleusercontent.com',
     iosBundleId: 'com.example.kittyCare',
   );
+
 }

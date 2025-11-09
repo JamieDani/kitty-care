@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../firebase_operations.dart';
 
 class DateDisplay extends StatefulWidget {
   const DateDisplay({super.key});
@@ -52,8 +53,10 @@ class _DateDisplayState extends State<DateDisplay> {
     await prefs.setStringList('period_dates', _periodDates.toList());
   }
 
-  void _togglePeriodDate(DateTime date) {
+  void _togglePeriodDate(DateTime date) async {
     final dateString = DateFormat('yyyy-MM-dd').format(date);
+    final bool wasAdded = !_periodDates.contains(dateString);
+
     setState(() {
       if (_periodDates.contains(dateString)) {
         _periodDates.remove(dateString);
@@ -61,7 +64,57 @@ class _DateDisplayState extends State<DateDisplay> {
         _periodDates.add(dateString);
       }
     });
-    _savePeriodDates();
+    await _savePeriodDates();
+
+    // If we added a date, check if it's the start of a new period
+    if (wasAdded) {
+      await _checkAndLogPeriodStart(date);
+    }
+  }
+
+  /// Check if this date is the start of a new period and log to Firebase
+  Future<void> _checkAndLogPeriodStart(DateTime date) async {
+    final DateFormat format = DateFormat('yyyy-MM-dd');
+    final dateString = format.format(date);
+
+    // Sort all period dates
+    final List<DateTime> sortedDates = _periodDates
+        .map((str) => format.parse(str))
+        .toList()
+      ..sort();
+
+    // Find distinct periods (gaps of more than 2 days indicate separate periods)
+    List<List<DateTime>> periods = [];
+    List<DateTime> currentPeriod = [sortedDates[0]];
+
+    for (int i = 1; i < sortedDates.length; i++) {
+      final gap = sortedDates[i].difference(sortedDates[i - 1]).inDays;
+      if (gap > 2) {
+        periods.add(List.from(currentPeriod));
+        currentPeriod = [sortedDates[i]];
+      } else {
+        currentPeriod.add(sortedDates[i]);
+      }
+    }
+    periods.add(currentPeriod);
+
+    // Find the period that contains our date
+    for (final period in periods) {
+      if (period.contains(date)) {
+        // Check if this date is the first day of this period
+        final firstDay = period.first;
+        if (date.isAtSameMomentAs(firstDay)) {
+          // This is a period start - log it to Firebase
+          try {
+            await logPeriodStart(dateString);
+            print('✅ Logged period start: $dateString');
+          } catch (e) {
+            print('❌ Error logging period start: $e');
+          }
+        }
+        break;
+      }
+    }
   }
 
   void _previousMonth() {

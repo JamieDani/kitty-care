@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import '../firebase_operations.dart';
 
 class SleepDisplay extends StatefulWidget {
   const SleepDisplay({super.key});
@@ -42,6 +43,36 @@ class _SleepDisplayState extends State<SleepDisplay> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('bedtime', _bedtime ?? '');
     await prefs.setString('waketime', _wakeTime ?? '');
+
+    // Log to Firebase
+    await _logSleepToFirebase();
+  }
+
+  Future<void> _logSleepToFirebase() async {
+    try {
+      // Only log if we have both times and a valid duration
+      if (_sleepDuration == null || _bedtime == null || _wakeTime == null) {
+        return;
+      }
+
+      // Convert duration to hours (with decimals)
+      final double hours = _sleepDuration!.inMinutes / 60.0;
+
+      // Get the selected date from SharedPreferences (same as calendar)
+      final prefs = await SharedPreferences.getInstance();
+      final savedDateStr = prefs.getString('saved_date');
+      final DateTime selectedDate = savedDateStr != null
+          ? DateTime.parse(savedDateStr)
+          : DateTime.now();
+      final String dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Call Firebase function
+      await logSleep(hours, dateString);
+
+      print('✅ Sleep logged to Firebase for $dateString: ${hours.toStringAsFixed(1)} hours');
+    } catch (e) {
+      print('❌ Error logging sleep to Firebase: $e');
+    }
   }
 
   void _calculateSleepDuration() {

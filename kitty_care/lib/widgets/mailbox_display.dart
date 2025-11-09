@@ -104,16 +104,143 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     double? positivity = prefs.getDouble('positivityScore');
 
     if (positivity == null) {
-      return "💗 Haven’t logged emotions today — check in with yourself when you can.";
+      return "💗 Haven't logged emotions today — check in with yourself when you can.";
     } else if (positivity >= 90) {
-      return "🌞 You’re glowing with positivity — your energy is contagious!";
+      return "🌞 You're glowing with positivity — your energy is contagious!";
     } else if (positivity >= 70) {
-      return "🌼 You’re radiating positivity — keep spreading that good energy!";
+      return "🌼 You're radiating positivity — keep spreading that good energy!";
     } else if (positivity >= 50) {
-      return "🌈 You’re doing alright — a little self-care can brighten your day.";
+      return "🌈 You're doing alright — a little self-care can brighten your day.";
     } else {
       return "💖 You seem a bit down — take a moment to rest, journal, or reach out to someone you trust.";
     }
+  }
+
+  /// Creates a period reminder if period is approaching soon
+  Future<String?> _generatePeriodReminder() async {
+    try {
+      final days = await _calculateDaysToPeriod(selectedDate!);
+      if (days == null) return null; // No period data available
+
+      if (days < 5 && days > 0) {
+        return "🩸 Your period is expected in $days day${days == 1 ? '' : 's'} — make sure you're prepared!";
+      } else if (days == 0) {
+        return "🩸 Your period is expected today — take care of yourself!";
+      }
+      return null; // No reminder needed
+    } catch (e) {
+      print('Error getting days to period: $e');
+      return null;
+    }
+  }
+
+  /// Calculate days until next period based on local calendar data
+  Future<int?> _calculateDaysToPeriod(DateTime referenceDate) async {
+    final prefs = await SharedPreferences.getInstance();
+    final periodDates = prefs.getStringList('period_dates') ?? [];
+
+    if (periodDates.isEmpty) return null; // No period data
+
+    final DateFormat format = DateFormat('yyyy-MM-dd');
+    final DateTime today = referenceDate;
+
+    // Parse all period dates and sort them
+    final List<DateTime> periodDatesParsed = periodDates
+        .map((dateStr) => format.parse(dateStr))
+        .toList()
+      ..sort();
+
+    // Find distinct periods (gaps of more than 2 days indicate separate periods)
+    List<List<DateTime>> periods = [];
+    List<DateTime> currentPeriod = [periodDatesParsed[0]];
+
+    for (int i = 1; i < periodDatesParsed.length; i++) {
+      final gap = periodDatesParsed[i].difference(periodDatesParsed[i - 1]).inDays;
+      if (gap > 2) {
+        // New period started
+        periods.add(List.from(currentPeriod));
+        currentPeriod = [periodDatesParsed[i]];
+      } else {
+        currentPeriod.add(periodDatesParsed[i]);
+      }
+    }
+    periods.add(currentPeriod); // Add the last period
+
+    print('📅 Found ${periods.length} distinct period(s)');
+
+    // Find the most recent COMPLETE period (not currently ongoing)
+    List<DateTime>? lastCompletePeriod;
+    for (int i = periods.length - 1; i >= 0; i--) {
+      final periodEnd = periods[i].last;
+      // A period is complete if its last day is at least 3 days ago
+      if (today.difference(periodEnd).inDays >= 3) {
+        lastCompletePeriod = periods[i];
+        break;
+      }
+    }
+
+    // If no complete period, check if we're currently in a period
+    if (lastCompletePeriod == null) {
+      // Check if today or yesterday is marked as a period day
+      final String todayStr = format.format(today);
+      final String yesterdayStr = format.format(today.subtract(const Duration(days: 1)));
+
+      if (periodDates.contains(todayStr) || periodDates.contains(yesterdayStr)) {
+        // Currently in period
+        return 0;
+      }
+
+      // Use the most recent period even if not complete
+      if (periods.isNotEmpty) {
+        lastCompletePeriod = periods.last;
+      } else {
+        return null;
+      }
+    }
+
+    final DateTime lastPeriodStart = lastCompletePeriod.first;
+    final int periodLength = lastCompletePeriod.length;
+
+    // Calculate average cycle length if we have at least 2 complete periods
+    int cycleLength = 28; // Default
+    if (periods.length >= 2) {
+      int totalDays = 0;
+      int cycleCount = 0;
+
+      for (int i = 1; i < periods.length; i++) {
+        // Only count if both periods are complete
+        final prevPeriodEnd = periods[i - 1].last;
+        final currentPeriodStart = periods[i].first;
+
+        if (today.difference(prevPeriodEnd).inDays >= 3 || i < periods.length - 1) {
+          totalDays += currentPeriodStart.difference(periods[i - 1].first).inDays;
+          cycleCount++;
+        }
+      }
+
+      if (cycleCount > 0) {
+        cycleLength = (totalDays / cycleCount).round();
+      }
+    }
+
+    // Calculate next period start
+    DateTime nextPeriodStart = lastPeriodStart.add(Duration(days: cycleLength));
+    int daysUntilPeriod = nextPeriodStart.difference(today).inDays;
+
+    // If the predicted period has passed, keep adding cycles until we find the next one
+    while (daysUntilPeriod < 0) {
+      nextPeriodStart = nextPeriodStart.add(Duration(days: cycleLength));
+      daysUntilPeriod = nextPeriodStart.difference(today).inDays;
+    }
+
+    print('📅 Last period start: ${format.format(lastPeriodStart)}');
+    print('📅 Last period end: ${format.format(lastCompletePeriod.last)}');
+    print('📅 Period length: $periodLength days');
+    print('📅 Average cycle length: $cycleLength days');
+    print('📅 Next period expected: ${format.format(nextPeriodStart)}');
+    print('📅 Days until next period: $daysUntilPeriod');
+
+    return daysUntilPeriod;
   }
 
   DateTime _parseTime(String timeString) => DateFormat('h:mm a').parse(timeString);
@@ -130,13 +257,20 @@ class MailboxDisplayState extends State<MailboxDisplay> {
     final randomReminder = (_reminders..shuffle()).first;
     final positivityMessage = await _generatePositivityMessage();
     final sleepMessage = await _generateSleepMessage();
+    final periodReminder = await _generatePeriodReminder();
 
+    // Start with base messages
     final generated = [
       "📅 Happy $weekday!",
       randomReminder,
       positivityMessage,
       sleepMessage,
     ];
+
+    // Add period reminder if approaching (< 5 days)
+    if (periodReminder != null) {
+      generated.insert(1, periodReminder); // Insert after "Happy [day]"
+    }
 
     await prefs.setStringList(key, generated);
     setState(() => messages = generated);

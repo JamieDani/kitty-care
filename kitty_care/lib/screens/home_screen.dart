@@ -48,12 +48,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initSeason() async {
     final String today = getCurrentLocalDate();
     final String? phase = await getCurrentPhase(today);
-    print("Your current phase: $phase");
+    print("📅 Today's date: $today");
+    print("🔍 Your current phase: $phase");
     if (phase != null && phaseToSeason.containsKey(phase)) {
       setState(() {
         currentSeason = phaseToSeason[phase]!;
+        print("🌸 Season set to: $currentSeason");
       });
+    } else {
+      print("⚠️ Phase not found or invalid, defaulting to winter");
     }
+  }
+
+  String get seasonalImagePath {
+    final path = switch (currentSeason) {
+      Season.winter => 'assets/images/New_Winter.png',
+      Season.spring => 'assets/images/New_Spring.png',
+      Season.summer => 'assets/images/New_Summer.png',
+      Season.fall => 'assets/images/New_Fall.png',
+    };
+    print("🖼️ Loading seasonal image: $path for season: $currentSeason");
+    return path;
   }
 
   @override
@@ -70,6 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned.fill(
             child: Image.asset(
               'assets/images/MediumBackdrop.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Seasonal layer (changes based on cycle phase)
+          Positioned.fill(
+            child: Image.asset(
+              seasonalImagePath,
               fit: BoxFit.cover,
             ),
           ),

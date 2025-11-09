@@ -3,6 +3,64 @@ import 'package:intl/intl.dart';
 
 final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+Future<String?> getCurrentPhase(String dateString) async {
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; 
+  final DateFormat format = DateFormat('yyyy-MM-dd');
+  final DateTime queryDate = format.parse(dateString);
+
+  try {
+    final DocumentReference childRef = _db.collection('children').doc(childId);
+    final CollectionReference cyclesRef = childRef.collection('cycles');
+
+    // Get all cycles ordered by periodStartDate descending
+    final QuerySnapshot cyclesSnapshot = await cyclesRef
+        .orderBy('periodStartDate', descending: true)
+        .get();
+
+    for (final doc in cyclesSnapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      final DateTime follicularStart =
+          format.parse(data['predictedFollicular'][0]);
+      final DateTime follicularEnd =
+          format.parse(data['predictedFollicular'][1]);
+      final DateTime ovulationDate =
+          format.parse(data['predictedOvulation']);
+      final DateTime lutealStart =
+          format.parse(data['predictedLuteal'][0]);
+      final DateTime lutealEnd =
+          format.parse(data['predictedLuteal'][1]);
+
+      // Check if queryDate is within this cycle
+      if (queryDate.isBefore(follicularStart) ||
+          queryDate.isAfter(lutealEnd)) {
+        // Not in this cycle
+        continue;
+      }
+
+      // Determine phase
+      if (!queryDate.isBefore(follicularStart) &&
+          !queryDate.isAfter(follicularEnd)) {
+        print("follicular");
+        return 'follicular';
+      } else if (queryDate.isAtSameMomentAs(ovulationDate)) {
+        print("ovulation");
+        return 'ovulation';
+      } else if (!queryDate.isBefore(lutealStart) &&
+          !queryDate.isAfter(lutealEnd)) {
+        print("luteal");
+        return 'luteal';
+      }
+    }
+
+    // If no cycle matches
+    return 'unknown';
+  } catch (e) {
+    print('❌ Error getting current phase: $e');
+    rethrow;
+  }
+}
+
 Future<void> logPeriodStart(String dateString) async {
   const String childId = 'TkzT27YKNhsb8k7ZOKFD';
   final DateFormat format = DateFormat('yyyy-MM-dd');
@@ -111,8 +169,11 @@ Future<void> logEmotions(
 
     if (existingLogs.docs.isEmpty) {
       // No existing log → create new one
+      final String? phase = await getCurrentPhase(dateString);
+
       await dailyLogsRef.add({
         'date': dateString,
+        'phase': phase,
         'emotionalSymptoms': {
           'happiness': happiness,
           'energy': energy,
@@ -164,9 +225,12 @@ Future<void> logSleep(double hours, String dateString) async {
         .get();
 
     if (existingLogs.docs.isEmpty) {
+      final String? phase = await getCurrentPhase(dateString);
+
       // No existing log → create a new one
       await dailyLogsRef.add({
         'date': dateString,
+        'phase': phase,
         'hoursSleep': hours,
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -185,4 +249,3 @@ Future<void> logSleep(double hours, String dateString) async {
     rethrow;
   }
 }
-

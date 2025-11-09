@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 
@@ -117,4 +118,122 @@ Future<Map<String, String>> sendMail(String message) async {
     throw Exception("Failed to call Gemini API: ${response.statusCode}\nBody: ${response.body}");
   }
 }
+
+// Analyzes a pad image and returns phase-appropriate feedback
+  Future<String> analyzePadImage(Uint8List imageBytes, String currentPhase) async {
+    final url = Uri.parse(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+    );
+
+    final headers = {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    };
+
+    // Convert image to base64
+    final base64Image = base64Encode(imageBytes);
+
+    final body = jsonEncode({
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": """
+You are a supportive menstrual health assistant for young people aged 7-12.
+
+Current cycle phase: $currentPhase
+
+Look at this pad image and:
+1. Describe what you observe about the flow (light/moderate/heavy)
+2. Explain if this is normal for the $currentPhase phase
+3. Give 1 helpful tip
+
+Use simple language, be warm and encouraging. Keep response under 60 words.
+"""
+            },
+            {
+              "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": base64Image
+              }
+            }
+          ]
+        }
+      ],
+    });
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final generatedText = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+      return generatedText ?? "Unable to analyze image at this time.";
+    } else {
+      throw Exception("Failed to analyze image: ${response.statusCode}\nBody: ${response.body}");
+    }
+  }
+
+
+ /// Analyzes a food image and returns phase-appropriate nutrition advice
+  Future<String> analyzeFoodImage(Uint8List imageBytes, String currentPhase) async {
+    final url = Uri.parse(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+    );
+
+    final headers = {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    };
+
+    final base64Image = base64Encode(imageBytes);
+
+    final Map<String, String> phaseGuidance = {
+      'period': 'iron-rich foods (like spinach, red meat) and anti-inflammatory foods',
+      'follicular': 'fresh vegetables, lean proteins, and lighter foods for energy',
+      'ovulation': 'fiber-rich foods, antioxidants, and foods that support hormones',
+      'luteal': 'complex carbs for mood, magnesium-rich foods (like nuts), foods that reduce bloating',
+    };
+
+    final guidance = phaseGuidance[currentPhase] ?? 'balanced, nutritious foods';
+
+    final body = jsonEncode({
+      "contents": [
+        {
+          "parts": [
+            {
+              "text": """
+You are a friendly nutrition guide for young people aged 7-12.
+
+Current cycle phase: $currentPhase (best foods: $guidance)
+
+Look at this food and:
+1. Name the main foods you see
+2. Share 1 way these foods help during the $currentPhase phase
+3. Be positive and encouraging!
+
+Use simple language. Keep response under 60 words.
+"""
+            },
+            {
+              "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": base64Image
+              }
+            }
+          ]
+        }
+      ],
+    });
+
+    final response = await http.post(url, headers: headers, body: body);
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      final generatedText = data["candidates"]?[0]?["content"]?["parts"]?[0]?["text"];
+      return generatedText ?? "Unable to analyze image at this time.";
+    } else {
+      throw Exception("Failed to analyze food: ${response.statusCode}\nBody: ${response.body}");
+    }
+  }
+
 }

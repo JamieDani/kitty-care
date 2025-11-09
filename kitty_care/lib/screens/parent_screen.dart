@@ -298,7 +298,7 @@ class DailyLogCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = log['date'] ?? 'Unknown date';
     final phase = log['phase'] ?? 'Unknown phase';
-    final hoursSlept = (log['hoursSlept'] ?? 0.0) as double;
+    final hoursSleep = (log['hoursSleep'] ?? 0.0) as double;
 
     final physical = log['physicalSymptoms'] as Map<String, dynamic>;
     final emotional = log['emotionalSymptoms'] as Map<String, dynamic>;
@@ -365,10 +365,10 @@ class DailyLogCard extends StatelessWidget {
                     ),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: (hoursSlept / 12).clamp(0.0, 1.0),
+                      widthFactor: (hoursSleep / 12).clamp(0.0, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: _getSleepColor(hoursSlept),
+                          color: _getSleepColor(hoursSleep),
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
@@ -377,11 +377,11 @@ class DailyLogCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '${hoursSlept.toStringAsFixed(1)}h',
+                  '${hoursSleep.toStringAsFixed(1)}h',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: _getSleepColor(hoursSlept),
+                    color: _getSleepColor(hoursSleep),
                   ),
                 ),
               ],

@@ -13,7 +13,6 @@ import '../widgets/mailbox_display.dart';
 import '../widgets/bandage_display.dart';
 import '../widgets/symptoms_display.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../widgets/name.dart';
 import '../firebase_operations.dart';
 import '../util.dart';
 import 'package:intl/intl.dart';

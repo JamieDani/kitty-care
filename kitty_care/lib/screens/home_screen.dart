@@ -59,19 +59,45 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Wellness App Prototype')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            NameWidget(),
-            WindowDisplay(currentSeason: currentSeason),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Stack(
+        children: [
+          // Background layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/MediumBackdrop.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Window overlay layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/NewWindow.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Cat overlay layer
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/Berrie_Cat_Eyes_Openhappy.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Content layer
+          SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
                 Calendar(
                   onPressed: () {
                     showDialog(
@@ -214,10 +240,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

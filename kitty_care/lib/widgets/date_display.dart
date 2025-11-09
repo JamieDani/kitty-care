@@ -195,12 +195,37 @@ class _DateDisplayState extends State<DateDisplay> {
         ),
 
         const SizedBox(height: 16),
-        Text(
-          "Selected: ${DateFormat('MMM d, yyyy').format(_selectedDate)}",
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_downward, size: 20),
+              onPressed: () {
+                setState(() {
+                  _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                });
+                _saveDate();
+              },
+              tooltip: 'Previous day',
+            ),
+            Text(
+              "Selected: ${DateFormat('MMM d, yyyy').format(_selectedDate)}",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.arrow_upward, size: 20),
+              onPressed: () {
+                setState(() {
+                  _selectedDate = _selectedDate.add(const Duration(days: 1));
+                });
+                _saveDate();
+              },
+              tooltip: 'Next day',
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(

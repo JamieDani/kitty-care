@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class Calendar extends StatelessWidget {
+class Symptoms extends StatelessWidget {
   final VoidCallback onPressed;
-  const Calendar({super.key, required this.onPressed});
+  const Symptoms({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: const Text('Calendar'),
+      child: const Text('Symptoms'),
     );
   }
 }

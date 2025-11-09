@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(
                             maxWidth: 340,
-                            maxHeight: 450,
+                            maxHeight: 500,
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
@@ -73,10 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         title: const Text('Mailbox'),
                         content: SizedBox(
                           width: 350,
-                          height: 400,
-                          child: SingleChildScrollView(
-                            child: const MailboxDisplay(),
-                          ),
+                          height: 450,
+                          child: const MailboxDisplay(),
                         ),
                         actions: [
                           TextButton(
@@ -96,10 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         title: const Text('Emotions Tracker'),
                         content: SizedBox(
                           width: 350,
-                          height: 400,
-                          child: SingleChildScrollView(
-                            child: const EmotionsDisplay(),
-                          ),
+                          height: 580,
+                          child: const EmotionsDisplay(),
                         ),
                         actions: [
                           TextButton(

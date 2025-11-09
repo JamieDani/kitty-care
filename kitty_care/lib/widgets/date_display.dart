@@ -12,12 +12,14 @@ class DateDisplay extends StatefulWidget {
 class _DateDisplayState extends State<DateDisplay> {
   DateTime _selectedDate = DateTime.now();
   late DateTime _focusedMonth;
+  Set<String> _periodDates = {}; // Store period dates as 'yyyy-MM-dd' strings
 
   @override
   void initState() {
     super.initState();
     _focusedMonth = DateTime(_selectedDate.year, _selectedDate.month);
     _loadSavedDate();
+    _loadPeriodDates();
   }
 
   Future<void> _loadSavedDate() async {
@@ -35,6 +37,31 @@ class _DateDisplayState extends State<DateDisplay> {
   Future<void> _saveDate() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('saved_date', _selectedDate.toIso8601String());
+  }
+
+  Future<void> _loadPeriodDates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPeriods = prefs.getStringList('period_dates') ?? [];
+    setState(() {
+      _periodDates = savedPeriods.toSet();
+    });
+  }
+
+  Future<void> _savePeriodDates() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('period_dates', _periodDates.toList());
+  }
+
+  void _togglePeriodDate(DateTime date) {
+    final dateString = DateFormat('yyyy-MM-dd').format(date);
+    setState(() {
+      if (_periodDates.contains(dateString)) {
+        _periodDates.remove(dateString);
+      } else {
+        _periodDates.add(dateString);
+      }
+    });
+    _savePeriodDates();
   }
 
   void _previousMonth() {
@@ -64,38 +91,42 @@ class _DateDisplayState extends State<DateDisplay> {
     // Add actual day boxes
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(_focusedMonth.year, _focusedMonth.month, day);
-      final isSelected = DateFormat('yyyy-MM-dd').format(date) ==
-          DateFormat('yyyy-MM-dd').format(_selectedDate);
-      final isToday = DateFormat('yyyy-MM-dd').format(date) ==
-          DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final dateString = DateFormat('yyyy-MM-dd').format(date);
+      final isSelected = dateString == DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final isToday = dateString == DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final isPeriodDay = _periodDates.contains(dateString);
 
       dayWidgets.add(
         GestureDetector(
           onTap: () {
-            setState(() {
-              _selectedDate = date;
-            });
-            _saveDate();
+            _togglePeriodDate(date);
           },
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isSelected
-                  ? Colors.pinkAccent
-                  : isToday
-                      ? Colors.pink.shade100
-                      : Colors.transparent,
+              color: isPeriodDay
+                  ? Colors.red.shade300
+                  : isSelected
+                      ? Colors.pinkAccent
+                      : isToday
+                          ? Colors.pink.shade100
+                          : Colors.transparent,
+              border: isPeriodDay && isSelected
+                  ? Border.all(color: Colors.pinkAccent, width: 2)
+                  : null,
             ),
             alignment: Alignment.center,
             child: Text(
               '$day',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: isSelected
+                color: isPeriodDay
                     ? Colors.white
-                    : isToday
-                        ? Colors.pinkAccent
-                        : Colors.black87,
+                    : isSelected
+                        ? Colors.white
+                        : isToday
+                            ? Colors.pinkAccent
+                            : Colors.black87,
               ),
             ),
           ),
@@ -169,6 +200,15 @@ class _DateDisplayState extends State<DateDisplay> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Click a day to mark/unmark period",
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            fontStyle: FontStyle.italic,
           ),
         ),
       ],

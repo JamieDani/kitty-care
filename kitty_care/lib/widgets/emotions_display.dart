@@ -59,32 +59,37 @@ class _EmotionsDisplayState extends State<EmotionsDisplay> {
 
   Widget _buildSlider(String leftEmoji, String leftLabel, String rightEmoji,
       String rightLabel, double value, ValueChanged<double> onChanged) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('$leftEmoji\n$leftLabel',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14)),
-            Text('$rightEmoji\n$rightLabel',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14)),
-          ],
-        ),
-        Slider(
-          value: value,
-          min: 0,
-          max: 100,
-          divisions: 10,
-          activeColor: Colors.pinkAccent,
-          label: value.round().toString(),
-          onChanged: (newValue) {
-            setState(() => onChanged(newValue));
-            _updatePositivity();
-          },
-        ),
-      ],
+    return Transform.translate(
+      offset: const Offset(0, 0),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('$leftEmoji $leftLabel',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14)),
+              Text('$rightEmoji $rightLabel',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 14)),
+            ],
+          ),
+          Transform.translate(
+            offset: const Offset(0, -8),
+            child: Slider(
+              value: value,
+              min: 0,
+              max: 100,
+              divisions: 10,
+              activeColor: Colors.pinkAccent,
+              onChanged: (newValue) {
+                setState(() => onChanged(newValue));
+                _updatePositivity();
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -106,42 +111,60 @@ class _EmotionsDisplayState extends State<EmotionsDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'How are you feeling today?',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          _buildSlider('😢', 'Sad', '😊', 'Happy', sadHappy,
-              (v) => sadHappy = v),
-          _buildSlider('😴', 'Tired', '⚡', 'Energetic', tiredEnergetic,
-              (v) => tiredEnergetic = v),
-          _buildSlider('🍽️', 'Hungry', '😋', 'Full', hungryFull,
-              (v) => hungryFull = v),
-          _buildSlider('😰', 'Worried', '😌', 'Calm', worriedCalm,
-              (v) => worriedCalm = v),
-          _buildSlider('😠', 'Angry', '🤗', 'Kind', angryKind,
-              (v) => angryKind = v),
-          const SizedBox(height: 18),
-          Text(
-            'Positivity Score: ${positivityScore.toStringAsFixed(0)}%',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'How are you feeling today?',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildSlider('😢', 'Sad', '😊', 'Happy', sadHappy,
+            (v) => sadHappy = v),
+        const SizedBox(height: 12),
+        _buildSlider('😴', 'Tired', '⚡', 'Energetic', tiredEnergetic,
+            (v) => tiredEnergetic = v),
+        const SizedBox(height: 12),
+        _buildSlider('🍽️', 'Hungry', '😋', 'Full', hungryFull,
+            (v) => hungryFull = v),
+        const SizedBox(height: 12),
+        _buildSlider('😰', 'Worried', '😌', 'Calm', worriedCalm,
+            (v) => worriedCalm = v),
+        const SizedBox(height: 12),
+        _buildSlider('😠', 'Angry', '🤗', 'Kind', angryKind,
+            (v) => angryKind = v),
+        const SizedBox(height: 16),
+        // Positivity Score at the bottom
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+          decoration: BoxDecoration(
+            color: _getScoreColor(positivityScore).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
               color: _getScoreColor(positivityScore),
+              width: 2,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            _getScoreMessage(positivityScore),
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          child: Column(
+            children: [
+              Text(
+                'Positivity Score: ${positivityScore.toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: _getScoreColor(positivityScore),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _getScoreMessage(positivityScore),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

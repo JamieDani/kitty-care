@@ -146,54 +146,79 @@ class _MailboxDisplayState extends State<MailboxDisplay> {
 
     final formattedDate = DateFormat('MMM d, yyyy').format(selectedDate!);
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '📬 Mail for $formattedDate',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.pinkAccent,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...messages.map((m) => Card(
-                  color: Colors.pink.shade50,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '📬 Mail for $formattedDate',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pinkAccent,
                   ),
-                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      m,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                ),
+                const SizedBox(height: 12),
+
+                // Display messages with proper spacing
+                ...messages.map((m) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Card(
+                        color: Colors.pink.shade50,
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            m,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )),
+
+                const SizedBox(height: 20),
+
+                // Keep refresh button always visible within scroll area
+                Align(
+                  alignment: Alignment.center,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh Mail'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pinkAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      final key = 'mail_${DateFormat('yyyy-MM-dd').format(selectedDate!)}';
+                      await prefs.remove(key);
+                      _loadMailForDate(selectedDate!);
+                    },
                   ),
-                )),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              onPressed: () async {
-                final prefs = await SharedPreferences.getInstance();
-                final key =
-                    'mail_${DateFormat('yyyy-MM-dd').format(selectedDate!)}';
-                await prefs.remove(key);
-                _loadMailForDate(selectedDate!);
-              },
-              label: const Text('Refresh Mail'),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -6,11 +6,13 @@ import '../widgets/emotions.dart';
 import '../widgets/sleep.dart';
 import '../widgets/bandage.dart';
 import '../widgets/window.dart';
+import '../widgets/symptoms.dart';
 import '../widgets/date_display.dart';
 import '../widgets/sleep_display.dart';
 import '../widgets/emotions_display.dart';
 import '../widgets/mailbox_display.dart';
 import '../widgets/bandage_display.dart';
+import '../widgets/symptoms_display.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -155,6 +157,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: SingleChildScrollView(
                             child: const BandageDisplay(),
                           ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                Symptoms(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Symptom Tracker'),
+                        content: SizedBox(
+                          width: 350,
+                          height: 520,
+                          child: const SymptomsDisplay(),
                         ),
                         actions: [
                           TextButton(

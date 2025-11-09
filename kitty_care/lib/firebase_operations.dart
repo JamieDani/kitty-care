@@ -2,14 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 final FirebaseFirestore _db = FirebaseFirestore.instance;
-
 Future<String?> getCurrentPhase(String dateString) async {
-  const String childId = 'TkzT27YKNhsb8k7ZOKFD'; 
+  const String childId = 'TkzT27YKNhsb8k7ZOKFD';
   final DateFormat format = DateFormat('yyyy-MM-dd');
   final DateTime queryDate = format.parse(dateString);
 
   try {
     final DocumentReference childRef = _db.collection('children').doc(childId);
+
+    // Get child's periodLength
+    final childSnapshot = await childRef.get();
+    if (!childSnapshot.exists) throw Exception('Child document not found');
+    final int periodLength = childSnapshot.get('periodLength');
+
     final CollectionReference cyclesRef = childRef.collection('cycles');
 
     // Get all cycles ordered by periodStartDate descending
@@ -24,25 +29,28 @@ Future<String?> getCurrentPhase(String dateString) async {
           format.parse(data['predictedFollicular'][0]);
       final DateTime follicularEnd =
           format.parse(data['predictedFollicular'][1]);
-      final DateTime ovulationDate =
-          format.parse(data['predictedOvulation']);
-      final DateTime lutealStart =
-          format.parse(data['predictedLuteal'][0]);
-      final DateTime lutealEnd =
-          format.parse(data['predictedLuteal'][1]);
+      final DateTime ovulationDate = format.parse(data['predictedOvulation']);
+      final DateTime lutealStart = format.parse(data['predictedLuteal'][0]);
+      final DateTime lutealEnd = format.parse(data['predictedLuteal'][1]);
 
       // Check if queryDate is within this cycle
-      if (queryDate.isBefore(follicularStart) ||
-          queryDate.isAfter(lutealEnd)) {
-        // Not in this cycle
-        continue;
+      if (queryDate.isBefore(follicularStart) || queryDate.isAfter(lutealEnd)) {
+        continue; // Not in this cycle
       }
 
-      // Determine phase
+      // ✅ Determine specific phase
       if (!queryDate.isBefore(follicularStart) &&
           !queryDate.isAfter(follicularEnd)) {
-        print("follicular");
-        return 'follicular';
+        // Check if within periodLength days of follicularStart
+        final DateTime periodEnd =
+            follicularStart.add(Duration(days: periodLength - 1));
+        if (!queryDate.isAfter(periodEnd)) {
+          print("period");
+          return 'period';
+        } else {
+          print("follicular");
+          return 'follicular';
+        }
       } else if (queryDate.isAtSameMomentAs(ovulationDate)) {
         print("ovulation");
         return 'ovulation';
@@ -52,14 +60,14 @@ Future<String?> getCurrentPhase(String dateString) async {
         return 'luteal';
       }
     }
-
-    // If no cycle matches
+    print('unknown');
     return 'unknown';
   } catch (e) {
     print('❌ Error getting current phase: $e');
     rethrow;
   }
 }
+
 
 Future<void> logPeriodStart(String dateString) async {
   const String childId = 'TkzT27YKNhsb8k7ZOKFD';

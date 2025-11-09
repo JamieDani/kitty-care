@@ -67,10 +67,10 @@ class _EmotionsDisplayState extends State<EmotionsDisplay> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('$leftEmoji $leftLabel',
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.left,
                   style: const TextStyle(fontSize: 14)),
-              Text('$rightEmoji $rightLabel',
-                  textAlign: TextAlign.center,
+              Text('$rightLabel $rightEmoji',
+                  textAlign: TextAlign.right,
                   style: const TextStyle(fontSize: 14)),
             ],
           ),
